@@ -1,0 +1,8 @@
+# Build output and local toolchain configuration
+.gradle/
+**/build/
+android/local.properties
+*.obj
+*.exe
+packet.bin
+.DS_Store

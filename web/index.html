@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101a28">
+<title>XIAO Motion • live sensor viewer</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<header><div><p class="eyebrow">SEEED XIAO nRF52840 SENSE</p><h1>Motion, in view.</h1><p class="sub">A live window into your board’s orientation.</p></div><span class="badge" id="badge">OFFLINE</span></header>
+<section class="toolbar" aria-label="Connection controls">
+<button id="connect" class="primary">Connect board</button>
+<button id="zero" disabled>Zero orientation</button>
+<button id="calibrate" disabled>Calibrate gyro</button>
+<label>Stream <select id="rate" disabled><option value="1">20 Hz</option><option value="2" selected>50 Hz</option><option value="3">100 Hz</option></select></label>
+<button id="demo" class="quiet">Preview demo</button>
+</section>
+<p id="status" role="status" aria-live="polite">Connect your XIAO, then keep it still for two seconds.</p>
+<div class="dashboard">
+<section class="board-panel">
+<div class="panel-head"><h2>ORIENTATION</h2><span id="battery">Battery —</span></div>
+<canvas id="board" aria-label="3D model of the XIAO board following its quaternion orientation"></canvas>
+<div class="angles"><div><span>ROLL</span><strong id="roll">—</strong></div><div><span>PITCH</span><strong id="pitch">—</strong></div><div><span>YAW</span><strong id="yaw">—</strong></div></div>
+<p class="legend"><span class="x">● X</span><span class="y">● Y</span><span class="z">● Z</span><span>USB socket marks the front</span></p>
+</section>
+<section class="signals">
+<div class="chart-panel"><div class="panel-head"><h2>ACCELERATION</h2><span>g · includes gravity</span></div><canvas id="accel" aria-label="Five-second acceleration strip chart"></canvas><div class="chart-foot"><span>5 seconds ago</span><span>now</span></div></div>
+<div class="chart-panel"><div class="panel-head"><h2>ANGULAR RATE</h2><span>degrees / second</span></div><canvas id="gyro" aria-label="Five-second angular-rate strip chart"></canvas><div class="chart-foot"><span>5 seconds ago</span><span>now</span></div></div>
+</section>
+</div>
+<footer><p>Yaw is relative and can drift; this board has no magnetometer. Battery percentage is approximate.</p><p>Use Chrome or Edge with Bluetooth support, over HTTPS. The Android app is available in <a href="https://github.com/ShahabSabzi/xiao-motion-sense-2026-10-07/releases/latest">GitHub Releases</a>.</p></footer>
+</main>
+<script type="module" src="app.js"></script>
+</body>
+</html>

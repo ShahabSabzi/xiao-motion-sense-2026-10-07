@@ -1,0 +1,83 @@
+name: Build, verify, and release APK
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag (leave blank to build an artifact only)'
+        required: false
+        default: ''
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Verify fusion, packet encoding and both decoders on the host
+        run: |
+          mkdir -p build/host
+          g++ -std=c++11 -Wall -Wextra -pedantic tests/motion_test.cpp -o build/host/motion-test
+          (cd build/host && ./motion-test)
+          javac -d build/host android/app/src/main/java/org/xiao/motion/MotionPacket.java tests/PacketTest.java
+          java -cp build/host org.xiao.motion.PacketTest build/host/packet.bin
+          node tests/protocol_test.mjs build/host/packet.bin
+      - uses: arduino/setup-arduino-cli@v2
+      - name: Compile the non-mbed Seeed firmware
+        run: |
+          arduino-cli core update-index --additional-urls https://files.seeedstudio.com/arduino/package_seeeduino_boards_index.json
+          arduino-cli core install Seeeduino:nrf52@1.1.13 --additional-urls https://files.seeedstudio.com/arduino/package_seeeduino_boards_index.json
+          arduino-cli compile --fqbn Seeeduino:nrf52:xiaonRF52840Sense --output-dir build/firmware firmware/XiaoMotion
+      # ubuntu-latest already has the Android SDK. Do not use setup-android.
+      - name: Ensure the pinned SDK components exist
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - name: Build and lint debug APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleDebug lintDebug
+      - name: Package installable APK and firmware
+        run: |
+          mkdir -p build/delivery
+          cp android/app/build/outputs/apk/debug/app-debug.apk build/delivery/xiao-motion-debug.apk
+          cp build/firmware/XiaoMotion.ino.hex build/delivery/XiaoMotion.hex
+          cp build/firmware/XiaoMotion.ino.zip build/delivery/XiaoMotion-dfu.zip
+          python3 scripts/make_uf2.py build/firmware/XiaoMotion.ino.hex build/delivery/XiaoMotion.uf2
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose build/delivery/xiao-motion-debug.apk
+          cd build/delivery
+          sha256sum xiao-motion-debug.apk XiaoMotion.hex XiaoMotion-dfu.zip XiaoMotion.uf2 > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xiao-motion-installables
+          path: build/delivery/*
+          retention-days: 30
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: xiao-motion-installables
+          path: delivery
+      - name: Attach APK and firmware to a GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+          COMMIT: ${{ github.sha }}
+        run: |
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --target "$COMMIT" --title "XIAO Motion $RELEASE_TAG" --notes "Install xiao-motion-debug.apk on Android 6 or newer. Flash XiaoMotion.uf2 using the board bootloader, or upload the included Arduino sketch with Seeed nRF52 Boards 1.1.13. Keep the board still for boot calibration. This is a debug-signed development app; its signing key is intentionally public."
+          fi
+          gh release upload "$RELEASE_TAG" delivery/* --clobber

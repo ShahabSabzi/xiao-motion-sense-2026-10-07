@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {decode,euler,rotate} from '../web/protocol.js';
+const bytes=readFileSync(process.argv[2]);
+const p=decode(new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength));
+assert.deepEqual(p.q,[1,0,0,0]);
+assert.deepEqual(p.a,[1,-2,.5]);assert.deepEqual(p.g,[90,-2000,2000]);
+assert.deepEqual(p.rpy,[0,0,0]);
+assert.equal(decode(new DataView(new ArrayBuffer(19))),null);
+assert.equal(decode(new DataView(new ArrayBuffer(20))),null);
+assert.ok(Math.abs(euler([Math.SQRT1_2,0,0,Math.SQRT1_2])[2]-90)<1e-8);
+const v=rotate([1,0,0],[Math.SQRT1_2,0,0,Math.SQRT1_2]);
+assert.ok(Math.abs(v[0])<1e-8&&Math.abs(v[1]-1)<1e-8);
+console.log('PASS: JavaScript decoder, orientation and rendering convention match C++ fixture');
