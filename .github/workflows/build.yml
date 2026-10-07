@@ -46,7 +46,14 @@ jobs:
           arduino-cli compile --fqbn Seeeduino:nrf52:xiaonRF52840Sense --output-dir build/firmware firmware/XiaoMotion
       # ubuntu-latest already has the Android SDK. Do not use setup-android.
       - name: Ensure the pinned SDK components exist
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+        run: |
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          if [ ! -f "$SDK_ROOT/platforms/android-35/android.jar" ] || [ ! -x "$SDK_ROOT/build-tools/35.0.0/apksigner" ]; then
+            "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$SDK_ROOT" "platforms;android-35" "build-tools;35.0.0"
+          fi
+          test -f "$SDK_ROOT/platforms/android-35/android.jar"
+          test -x "$SDK_ROOT/build-tools/35.0.0/apksigner"
       - name: Build and lint debug APK
         working-directory: android
         run: |
