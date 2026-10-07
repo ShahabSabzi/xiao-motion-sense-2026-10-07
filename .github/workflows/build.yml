@@ -31,6 +31,14 @@ jobs:
           java -cp build/host org.xiao.motion.PacketTest build/host/packet.bin
           node tests/protocol_test.mjs build/host/packet.bin
       - uses: arduino/setup-arduino-cli@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install the core's Linux DFU packaging tool
+        run: |
+          python -m venv build/nrfutil-venv
+          build/nrfutil-venv/bin/python -m pip install adafruit-nrfutil==0.5.3.post16
+          echo "$PWD/build/nrfutil-venv/bin" >> "$GITHUB_PATH"
       - name: Compile the non-mbed Seeed firmware
         run: |
           arduino-cli core update-index --additional-urls https://files.seeedstudio.com/arduino/package_seeeduino_boards_index.json

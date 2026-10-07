@@ -28,6 +28,9 @@ Checked on 2026-10-07.
 - Browser viewer exercised in headless Edge at desktop and phone widths:
   demo animation, angle updates, no horizontal overflow, no JavaScript errors,
   and switching back from demo to offline.
+- Browser connection logic also exercised against a simulated peripheral:
+  scan filters, subscribe-before-binary ordering, battery read, serialised
+  commands and disconnect cleanup passed. This is not a physical BLE test.
 - UF2 converter accepted the application's HEX checksum/address range and
   produced nRF52840-family application blocks.
 

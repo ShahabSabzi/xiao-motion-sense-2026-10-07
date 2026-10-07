@@ -194,7 +194,8 @@ Push a version tag such as `v1.0.1` to attach the APK, UF2, HEX, DFU ZIP and
 SHA-256 checksums to a GitHub release. Alternatively, run **Build, verify, and
 release APK** from Actions with a `release_tag`. Empty input builds an artifact
 only. The job uses the runner's existing SDK and `sdkmanager`; it does **not**
-use `android-actions/setup-android`. Java 17, Gradle 8.11.1, AGP 8.9.2 and
+use `android-actions/setup-android`. The Linux firmware job installs Adafruit’s DFU packaging tool in an isolated
+Python 3.11 environment. Java 17, Gradle 8.11.1, AGP 8.9.2 and
 Android SDK/build tools 35 are pinned. No Kotlin, AndroidX, Compose or
 third-party runtime libraries are included.
 
